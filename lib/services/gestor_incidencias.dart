@@ -12,16 +12,29 @@ class GestorIncidencias {
         incidencias.where((x) => x.estado == 'Pendiente').length;
   }
 
-  List<Incidencia> buscar(String texto) {
+  List<Incidencia> buscar(
+      String texto, String estadoFiltro, String prioridadFiltro) {
     final busqueda = texto.trim().toLowerCase();
 
-    if (busqueda.isEmpty) return incidencias;
-
     return incidencias.where((x) {
-      final titulo = x.titulo.toLowerCase();
-      final descripcion = x.descripcion.toLowerCase();
+      // 1. Condición de texto
+      bool coincideTexto = true;
+      if (busqueda.isNotEmpty) {
+        final titulo = x.titulo.toLowerCase();
+        final descripcion = x.descripcion.toLowerCase();
+        coincideTexto =
+            titulo.contains(busqueda) || descripcion.contains(busqueda);
+      }
 
-      return titulo.contains(busqueda) || descripcion.contains(busqueda);
+      // 2. Condición de estado
+      bool coincideEstado = estadoFiltro == 'Todos' || x.estado == estadoFiltro;
+
+      // 3. Condición de prioridad
+      bool coincidePrioridad =
+          prioridadFiltro == 'Todas' || x.prioridad == prioridadFiltro;
+
+      // Retorna true solo si pasa los tres filtros al mismo tiempo
+      return coincideTexto && coincideEstado && coincidePrioridad;
     }).toList();
   }
 

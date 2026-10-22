@@ -15,12 +15,24 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   final GestorIncidencias g = GestorIncidencias();
   bool cargando = true;
   String? error;
+
+  // VARIABLES DE FILTRO NUEVAS
   String busqueda = '';
+  String filtroEstado = 'Todos';
+  String filtroPrioridad = 'Todas';
+  final controlBusqueda =
+      TextEditingController(); // Ayuda a limpiar la caja de texto
 
   @override
   void initState() {
     super.initState();
     cargar();
+  }
+
+  @override
+  void dispose() {
+    controlBusqueda.dispose();
+    super.dispose();
   }
 
   Future<void> cargar() async {
@@ -86,9 +98,21 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
     }
   }
 
+  // MÉTODO PARA LIMPIAR FILTROS
+  void limpiarFiltros() {
+    setState(() {
+      filtroEstado = 'Todos';
+      filtroPrioridad = 'Todas';
+      busqueda = '';
+      controlBusqueda.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final items = g.buscar(busqueda);
+    // LLAMAMOS AL NUEVO BUSCADOR COMBINADO
+    final items = g.buscar(busqueda, filtroEstado, filtroPrioridad);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('NexaSoft | Incidencias'),
@@ -167,6 +191,8 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 17, vertical: 5),
                           child: TextField(
+                            controller:
+                                controlBusqueda, // Enlazamos el controlador
                             decoration: const InputDecoration(
                               labelText: 'Buscar incidencias',
                               hintText: 'Ejemplo: WiFi, correo, pantalla',
@@ -175,6 +201,58 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                             ),
                             onChanged: (texto) =>
                                 setState(() => busqueda = texto),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 17, vertical: 5),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: filtroEstado,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Estado',
+                                      border: OutlineInputBorder(),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 8)),
+                                  items: [
+                                    'Todos',
+                                    'Pendiente',
+                                    'En proceso',
+                                    'Resuelta'
+                                  ]
+                                      .map((e) => DropdownMenuItem(
+                                          value: e, child: Text(e)))
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setState(() => filtroEstado = v!),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: filtroPrioridad,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Prioridad',
+                                      border: OutlineInputBorder(),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 8)),
+                                  items: ['Todas', 'Baja', 'Media', 'Alta']
+                                      .map((e) => DropdownMenuItem(
+                                          value: e, child: Text(e)))
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setState(() => filtroPrioridad = v!),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              IconButton.filledTonal(
+                                tooltip: 'Limpiar filtros',
+                                icon: const Icon(Icons.filter_alt_off),
+                                onPressed: limpiarFiltros,
+                              ),
+                            ],
                           ),
                         ),
                         Padding(
@@ -189,7 +267,10 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                         Expanded(
                           child: items.isEmpty
                               ? const Center(
-                                  child: Text('No se encontraron incidencias'))
+                                  child: Text(
+                                      'No hay resultados para la combinación de filtros.',
+                                      style: TextStyle(
+                                          fontSize: 16, color: Colors.black54)))
                               : ListView.builder(
                                   padding: const EdgeInsets.only(
                                       left: 12, right: 12, bottom: 100),
@@ -215,7 +296,6 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
                                               Text(
                                                   '${item.id}  ·  ${item.cliente}'),
                                               const SizedBox(height: 6),
-                                              // CAMBIO 3: Mostrar estado y prioridad combinados
                                               Text(
                                                   '${item.estado}  •  Prioridad: ${item.prioridad}',
                                                   style: TextStyle(
