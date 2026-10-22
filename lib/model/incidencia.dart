@@ -6,6 +6,7 @@ class Incidencia {
   String categoria;
   String estado;
   String fecha;
+  String prioridad;
 
   Incidencia({
     required this.id,
@@ -15,6 +16,7 @@ class Incidencia {
     required this.categoria,
     required this.estado,
     required this.fecha,
+    this.prioridad = 'Media',
   });
 
   factory Incidencia.desdeJson(Map<String, dynamic> m) {
@@ -26,6 +28,7 @@ class Incidencia {
       categoria: m['categoria']?.toString() ?? 'Software',
       estado: m['estado']?.toString() ?? 'Pendiente',
       fecha: m['fecha']?.toString() ?? '',
+      prioridad: m['prioridad'] ?? 'Media',
     );
   }
 
@@ -38,6 +41,7 @@ class Incidencia {
       'categoria': categoria,
       'estado': estado,
       'fecha': fecha,
+      'prioridad': prioridad,
     };
   }
 }

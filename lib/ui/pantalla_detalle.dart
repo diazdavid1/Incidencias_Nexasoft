@@ -22,7 +22,29 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => guardando = false);
+    }
+  }
+
+  // CAMBIO 1: Función para actualizar y persistir la prioridad
+  Future<void> cambiarPrioridad(String? valor) async {
+    if (valor == null) return;
+    setState(() => guardando = true);
+    try {
+      final item = widget.gestor.porId(widget.id);
+      if (item != null) {
+        item.prioridad = valor;
+        await widget.gestor.datos.guardar(widget.gestor.incidencias);
+      }
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
       }
     } finally {
       if (mounted) setState(() => guardando = false);
@@ -33,7 +55,8 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(etiqueta, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+        Text(etiqueta,
+            style: const TextStyle(color: Colors.black54, fontSize: 12)),
         const SizedBox(height: 3),
         Text(valor, style: const TextStyle(fontSize: 16)),
       ]),
@@ -53,33 +76,58 @@ class _PantallaDetalleState extends State<PantallaDetalle> {
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text(item.id, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
+                    Text(item.id,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54)),
                     const SizedBox(height: 8),
-                    Text(item.titulo, style: Theme.of(context).textTheme.headlineSmall),
+                    Text(item.titulo,
+                        style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 12),
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(18),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          fila('Cliente', item.cliente),
-                          fila('Categoría', item.categoria),
-                          fila('Fecha de reporte', item.fecha),
-                          fila('Descripción', item.descripcion),
-                        ]),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              fila('Cliente', item.cliente),
+                              fila('Categoría', item.categoria),
+                              fila('Fecha de reporte', item.fecha),
+                              fila('Descripción', item.descripcion),
+                            ]),
                       ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: item.estado,
-                      decoration: const InputDecoration(labelText: 'Estado actual', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                          labelText: 'Estado actual',
+                          border: OutlineInputBorder()),
                       items: ['Pendiente', 'En proceso', 'Resuelta']
-                          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                          .map(
+                              (v) => DropdownMenuItem(value: v, child: Text(v)))
                           .toList(),
                       onChanged: guardando ? null : cambiar,
                     ),
-                    if (guardando) const Padding(
-                      padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator(),
+                    const SizedBox(height: 16),
+
+                    // CAMBIO 2: Añadir el selector de prioridad en el detalle
+                    DropdownButtonFormField<String>(
+                      value: item.prioridad,
+                      decoration: const InputDecoration(
+                          labelText: 'Prioridad', border: OutlineInputBorder()),
+                      items: ['Baja', 'Media', 'Alta']
+                          .map(
+                              (v) => DropdownMenuItem(value: v, child: Text(v)))
+                          .toList(),
+                      onChanged: guardando ? null : cambiarPrioridad,
                     ),
+
+                    if (guardando)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: LinearProgressIndicator(),
+                      ),
                     const SizedBox(height: 12),
                     const Text('Los cambios se reflejan al volver a la lista.',
                         style: TextStyle(color: Colors.black54)),
